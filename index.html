@@ -72,14 +72,19 @@ button{cursor:pointer;font-family:inherit}
 @keyframes wordReveal{from{opacity:0;transform:scale(.5) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
 
 /* ── SCROLL REVEAL ── */
-.reveal{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s ease}
-.reveal.visible{opacity:1;transform:translateY(0)}
-.reveal-left{opacity:0;transform:translateX(-50px);transition:opacity .7s ease,transform .7s ease}
-.reveal-left.visible{opacity:1;transform:translateX(0)}
-.reveal-right{opacity:0;transform:translateX(50px);transition:opacity .7s ease,transform .7s ease}
-.reveal-right.visible{opacity:1;transform:translateX(0)}
-.reveal-scale{opacity:0;transform:scale(.92) translateY(18px);transition:opacity .6s ease,transform .6s ease}
-.reveal-scale.visible{opacity:1;transform:scale(1) translateY(0)}
+.reveal,.reveal-left,.reveal-right,.reveal-scale{transition:opacity .7s ease,transform .7s ease}
+.reveal{opacity:1;transform:none}
+.reveal-left{opacity:1;transform:none}
+.reveal-right{opacity:1;transform:none}
+.reveal-scale{opacity:1;transform:none}
+.js-reveal .reveal{opacity:0;transform:translateY(28px)}
+.js-reveal .reveal.visible{opacity:1;transform:translateY(0)}
+.js-reveal .reveal-left{opacity:0;transform:translateX(-50px)}
+.js-reveal .reveal-left.visible{opacity:1;transform:translateX(0)}
+.js-reveal .reveal-right{opacity:0;transform:translateX(50px)}
+.js-reveal .reveal-right.visible{opacity:1;transform:translateX(0)}
+.js-reveal .reveal-scale{opacity:0;transform:scale(.92) translateY(18px)}
+.js-reveal .reveal-scale.visible{opacity:1;transform:scale(1) translateY(0)}
 
 /* ── NAVBAR ── */
 #navbar{position:fixed;top:0;left:0;right:0;z-index:50;transition:all .5s;padding:0 1rem}
@@ -103,7 +108,7 @@ button{cursor:pointer;font-family:inherit}
 .mobile-link:hover{color:#fff;background:rgba(255,255,255,.05)}
 
 /* ── HERO ── */
-#hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;text-align:center}
+#hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;text-align:center;padding-top:5rem}
 .hero-orb1{position:absolute;top:25%;left:-25%;width:600px;height:600px;border-radius:50%;background:rgba(0,212,255,.1);filter:blur(120px);animation:float 7s ease-in-out infinite}
 .hero-orb2{position:absolute;bottom:25%;right:-25%;width:500px;height:500px;border-radius:50%;background:rgba(168,85,247,.1);filter:blur(120px);animation:float2 7s ease-in-out 2s infinite}
 .hero-grid{position:absolute;inset:0;opacity:.03;background-image:linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px);background-size:60px 60px}
@@ -946,11 +951,29 @@ mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => 
 }));
 
 // ── SCROLL REVEAL ──
-const revealEls = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale');
-const obs = new IntersectionObserver((entries) => {
-  entries.forEach(e => { if(e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
-}, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
-revealEls.forEach(el => obs.observe(el));
+// Mark page as JS-enabled so reveal CSS activates
+document.documentElement.classList.add('js-reveal');
+
+function checkReveal() {
+  var wh = window.innerHeight;
+  var els = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale');
+  els.forEach(function(el) {
+    if (el.classList.contains('visible')) return;
+    var rect = el.getBoundingClientRect();
+    if (rect.top < wh - 40) el.classList.add('visible');
+  });
+}
+
+window.addEventListener('scroll', checkReveal, { passive: true });
+window.addEventListener('resize', checkReveal, { passive: true });
+// Run immediately for above-fold elements
+checkReveal();
+// Fallback: ensure everything visible after 1.5s regardless
+setTimeout(function() {
+  document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale').forEach(function(el) {
+    el.classList.add('visible');
+  });
+}, 1500);
 
 // ── AI EXPERTISE CARDS ──
 const expCards = document.querySelectorAll('.exp-card');
@@ -1028,16 +1051,21 @@ setActiveStep(0);
 
 // ── COMMITMENT ANIMATION ──
 let commitDone = false;
-const commitObs = new IntersectionObserver(entries => {
-  if(entries[0].isIntersecting && !commitDone){
+function checkCommitment() {
+  if (commitDone) return;
+  var el = document.getElementById('commitment');
+  if (!el) return;
+  var rect = el.getBoundingClientRect();
+  if (rect.top < window.innerHeight * 0.8) {
     commitDone = true;
-    setTimeout(()=>document.getElementById('cw0').classList.add('shown'), 400);
-    setTimeout(()=>document.getElementById('cw1').classList.add('shown'), 1000);
-    setTimeout(()=>document.getElementById('cw2').classList.add('shown'), 1600);
-    setTimeout(()=>document.getElementById('commit-text').classList.add('shown'), 2400);
+    setTimeout(function(){var e=document.getElementById('cw0');if(e)e.classList.add('shown')},300);
+    setTimeout(function(){var e=document.getElementById('cw1');if(e)e.classList.add('shown')},900);
+    setTimeout(function(){var e=document.getElementById('cw2');if(e)e.classList.add('shown')},1500);
+    setTimeout(function(){var e=document.getElementById('commit-text');if(e)e.classList.add('shown')},2300);
   }
-}, {threshold:0.3});
-commitObs.observe(document.getElementById('commitment'));
+}
+window.addEventListener('scroll', checkCommitment, { passive: true });
+checkCommitment();
 
 // ── CONTACT FORM ──
 function handleSubmit(e){
